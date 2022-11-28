@@ -1,5 +1,5 @@
 const { ApolloServer, gql } = require("apollo-server")
-const { v1: uuid } = require('uuid')
+const { v1: uuid } = require("uuid")
 
 let authors = [
   {
@@ -10,18 +10,18 @@ let authors = [
   {
     name: "Martin Fowler",
     id: "afa5b6f0-344d-11e9-a414-719c6709cf3e",
-    born: 1963
+    born: 1963,
   },
   {
     name: "Fyodor Dostoevsky",
     id: "afa5b6f1-344d-11e9-a414-719c6709cf3e",
-    born: 1821
+    born: 1821,
   },
-  { 
+  {
     name: "Joshua Kerievsky", // birthyear not known
     id: "afa5b6f2-344d-11e9-a414-719c6709cf3e",
   },
-  { 
+  {
     name: "Sandi Metz", // birthyear not known
     id: "afa5b6f3-344d-11e9-a414-719c6709cf3e",
   },
@@ -33,49 +33,49 @@ let books = [
     published: 2008,
     author: "Robert Martin",
     id: "afa5b6f4-344d-11e9-a414-719c6709cf3e",
-    genres: ["refactoring"]
+    genres: ["refactoring"],
   },
   {
     title: "Agile software development",
     published: 2002,
     author: "Robert Martin",
     id: "afa5b6f5-344d-11e9-a414-719c6709cf3e",
-    genres: ["agile", "patterns", "design"]
+    genres: ["agile", "patterns", "design"],
   },
   {
     title: "Refactoring, edition 2",
     published: 2018,
     author: "Martin Fowler",
     id: "afa5de00-344d-11e9-a414-719c6709cf3e",
-    genres: ["refactoring"]
+    genres: ["refactoring"],
   },
   {
     title: "Refactoring to patterns",
     published: 2008,
     author: "Joshua Kerievsky",
     id: "afa5de01-344d-11e9-a414-719c6709cf3e",
-    genres: ["refactoring", "patterns"]
-  },  
+    genres: ["refactoring", "patterns"],
+  },
   {
     title: "Practical Object-Oriented Design, An Agile Primer Using Ruby",
     published: 2012,
     author: "Sandi Metz",
     id: "afa5de02-344d-11e9-a414-719c6709cf3e",
-    genres: ["refactoring", "design"]
+    genres: ["refactoring", "design"],
   },
   {
     title: "Crime and punishment",
     published: 1866,
     author: "Fyodor Dostoevsky",
     id: "afa5de03-344d-11e9-a414-719c6709cf3e",
-    genres: ["classic", "crime"]
+    genres: ["classic", "crime"],
   },
   {
     title: "The Demon ",
     published: 1872,
     author: "Fyodor Dostoevsky",
     id: "afa5de04-344d-11e9-a414-719c6709cf3e",
-    genres: ["classic", "revolution"]
+    genres: ["classic", "revolution"],
   },
 ]
 
@@ -93,7 +93,7 @@ const typeDefs = gql`
     author: String!
     id: ID!
     genres: [String!]!
-}
+  }
 
   type Query {
     bookCount: Int!
@@ -109,10 +109,7 @@ const typeDefs = gql`
       author: String!
       genres: [String!]!
     ): Book
-    editAuthor(
-      name: String!
-      setBornTo: Int!
-    ): Author
+    editAuthor(name: String!, setBornTo: Int!): Author
   }
 `
 
@@ -123,27 +120,27 @@ const resolvers = {
     allBooks: (root, args) => {
       let response = books.slice()
       if (args.author) {
-        response = books.filter(book => book.author === args.author)
+        response = books.filter((book) => book.author === args.author)
       }
       if (args.genre) {
-        response = response.filter(book => book.genres.includes(args.genre))
+        response = response.filter((book) => book.genres.includes(args.genre))
       }
       return response
     },
-    allAuthors: () => authors
+    allAuthors: () => authors,
   },
   Author: {
     bookCount: (root) => {
-      return books.filter(book => book.author === root.name).length
-    }
+      return books.filter((book) => book.author === root.name).length
+    },
   },
   Mutation: {
     addBook: (root, args) => {
-      const authorExists = authors.find(author => author.name === args.author)
+      const authorExists = authors.find((author) => author.name === args.author)
       if (!authorExists) {
         const newAuthor = {
           name: args.author,
-          id: uuid()
+          id: uuid(),
         }
         authors = authors.concat(newAuthor)
       }
@@ -152,13 +149,17 @@ const resolvers = {
       return book
     },
     editAuthor: (root, args) => {
-      const authorExist = authors.find(author => author.name === args.author)
-      if (!authorExist) { return null }
+      const authorExist = authors.find((author) => author.name === args.name)
+      if (!authorExist) {
+        return null
+      }
       const updatedAuthor = { ...authorExist, born: args.setBornTo }
-      authors = authors.map(author => author.name === args.name ? updatedAuthor: author)
+      authors = authors.map((author) =>
+        author.name === args.name ? updatedAuthor : author
+      )
       return updatedAuthor
-    }
-  }
+    },
+  },
 }
 
 const server = new ApolloServer({
