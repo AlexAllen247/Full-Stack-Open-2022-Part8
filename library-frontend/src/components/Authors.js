@@ -4,10 +4,10 @@ import { ALL_AUTHORS, EDIT_AUTHOR } from "../queries"
 
 let authors
 
-const Authors = (props) => {
+const Authors = ({ show, loggedIn }) => {
   const result = useQuery(ALL_AUTHORS)
 
-  if (!props.show) {
+  if (!show) {
     return null
   }
 
@@ -36,16 +36,19 @@ const Authors = (props) => {
           ))}
         </tbody>
       </table>
-      <BirthForm />
+      <BirthForm loggedIn={loggedIn} />
     </div>
   )
 }
 
-const BirthForm = () => {
+const BirthForm = ({ loggedIn }) => {
   const [name, setName] = useState("")
   const [birth, setBirth] = useState("")
   const [editAuthor] = useMutation(EDIT_AUTHOR, {
     refetchQueries: [{ query: ALL_AUTHORS }],
+    onError: (error) => {
+      console.log(error.graphQLErrors[0].message)
+    },
   })
 
   const handleSubmit = async (event) => {
@@ -55,18 +58,20 @@ const BirthForm = () => {
     setBirth("")
   }
 
+  if (!loggedIn) {
+    return null
+  }
+
   return (
     <div>
       <h2>Set Birthyear</h2>
       <form onSubmit={handleSubmit}>
         <label>
           name
-          <select
-            value={name}
-            onChange={({ target }) => setName(target.value)}>
-                {authors.map((author) => 
-                    <option value={author.name}>{author.name}</option>
-                )}
+          <select value={name} onChange={({ target }) => setName(target.value)}>
+            {authors.map((author) => (
+              <option value={author.name}>{author.name}</option>
+            ))}
           </select>
         </label>
         <label>
