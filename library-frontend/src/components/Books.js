@@ -1,17 +1,14 @@
-import { useQuery } from "@apollo/client"
-import { ALL_BOOKS, ALL_BOOKS_GENRES } from "../queries"
+import { useQuery, useLazyQuery } from "@apollo/client"
+import { ALL_BOOKS } from "../queries"
 import { useState, useEffect } from "react"
 
-const Books = ({ show }) => {
-  const [books, setBooks] = useState(null)
-  const [genreFilter, setGenreFilter] = useState(null)
-  const genres = useQuery(ALL_BOOKS_GENRES)
-  const result = useQuery(ALL_BOOKS, {
-    variables: {
-      genre: genreFilter,
-    },
-    fetchPolicy: "network-only",
+const Books = (props) => {
+  const result = useQuery(ALL_BOOKS)
+  const [getBooksByGenre, genreResult] = useLazyQuery(ALL_BOOKS, {
+    fetchPolicy: "no-cache",
   })
+  const [genre, setGenre] = useState("all")
+  const [books, setBooks] = useState([])
 
   useEffect(() => {
     if (result.data) {
@@ -19,66 +16,68 @@ const Books = ({ show }) => {
     }
   }, [result.data])
 
-  if (!show) {
+  useEffect(() => {
+    if (genreResult.data) {
+      setBooks(genreResult.data.allBooks)
+    }
+  }, [genreResult.data])
+
+  if (!props.show) {
     return null
   }
 
-  if (result.loading) {
+  if (result.loading || genreResult.loading) {
     return <div>loading...</div>
   }
 
-  const allGenres = genres.data.allBooks.flatMap((book) => book.genres)
-  const individualGenres = [...new Set(allGenres)]
-  const switchFilter = (value) => {
-    setGenreFilter(value)
-    genres.refetch({ query: ALL_BOOKS_GENRES })
+  if (result.error || genreResult.error) {
+    return <div>error!</div>
+  }
+
+  const { allBooks } = result.data
+
+  const genres = [...new Set(allBooks.flatMap((b) => b.genres))].concat("all")
+
+  const handleGenreClick = (genre) => {
+    setGenre(genre)
+
+    if (genre === "all") {
+      setBooks(allBooks)
+      return
+    }
+
+    getBooksByGenre({ variables: { genre: genre } })
   }
 
   return (
     <div>
-      <h2>books</h2>
+      <h2>Books</h2>
+      <p>
+        in genre <strong>{genre}</strong>
+      </p>
       <table>
         <tbody>
           <tr>
-            <th>title</th>
+            <th></th>
             <th>author</th>
             <th>published</th>
-            <th>genres</th>
           </tr>
-          {books.map((book) => (
-            <tr key={book.title}>
+          {books.map((book, i) => (
+            <tr key={i}>
               <td>{book.title}</td>
               <td>{book.author.name}</td>
               <td>{book.published}</td>
-              <td>{book.genres.join(", ")}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <form>
-        {individualGenres.map((genre) => (
-          <label key={genre}>
-            <input
-              type="radio"
-              value={genre}
-              name="genre-filter"
-              onChange={({ target }) => switchFilter(target.value)}
-            />
+      <div>
+        {genres.map((genre) => (
+          <button key={genre} onClick={() => handleGenreClick(genre)}>
             {genre}
-          </label>
+          </button>
         ))}
-        <label>
-          <input
-            type="radio"
-            key="all"
-            value="all"
-            name="genre-filter"
-            defaultChecked={true}
-            onChange={() => switchFilter(null)}
-          />
-          all genres
-        </label>
-      </form>
+      </div>
     </div>
   )
 }

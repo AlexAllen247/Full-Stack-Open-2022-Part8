@@ -1,13 +1,13 @@
 import { useQuery, useMutation } from "@apollo/client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ALL_AUTHORS, EDIT_AUTHOR } from "../queries"
 
 let authors
 
-const Authors = ({ show, loggedIn }) => {
+const Authors = (props) => {
   const result = useQuery(ALL_AUTHORS)
 
-  if (!show) {
+  if (!props.show) {
     return null
   }
 
@@ -36,15 +36,15 @@ const Authors = ({ show, loggedIn }) => {
           ))}
         </tbody>
       </table>
-      <BirthForm loggedIn={loggedIn} />
+      <BirthForm />
     </div>
   )
 }
 
-const BirthForm = ({ loggedIn }) => {
+const BirthForm = () => {
   const [name, setName] = useState("")
   const [birth, setBirth] = useState("")
-  const [editAuthor] = useMutation(EDIT_AUTHOR, {
+  const [editAuthor, result] = useMutation(EDIT_AUTHOR, {
     refetchQueries: [{ query: ALL_AUTHORS }],
     onError: (error) => {
       console.log(error.graphQLErrors[0].message)
@@ -58,9 +58,12 @@ const BirthForm = ({ loggedIn }) => {
     setBirth("")
   }
 
-  if (!loggedIn) {
-    return null
-  }
+  useEffect(() => {
+    if (result.data && result.data.editAuthor === null) {
+      window.alert("Author not found");
+    }
+  }, [result.data]); // eslint-disable-line
+  
 
   return (
     <div>

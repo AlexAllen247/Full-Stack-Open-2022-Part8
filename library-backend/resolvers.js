@@ -1,8 +1,8 @@
 require("dotenv").config()
 const { UserInputError, AuthenticationError } = require("apollo-server")
-const { PubSub } = require('graphql-subscriptions')
+const { PubSub } = require("graphql-subscriptions")
 const pubsub = new PubSub()
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken")
 
 const Author = require("./models/author")
 const Book = require("./models/book")
@@ -14,7 +14,15 @@ const resolvers = {
       return context.currentUser
     },
     authorCount: async () => Author.collection.countDocuments(),
-    bookCount: async () => Book.collection.countDocuments(),
+    bookCount: async (root) => {
+      const allBooks = await Book.find({ name: root.name })
+        .populate("author")
+        .exec()
+      const booksLength = allBooks.filter(
+        (book) => book.author.name === root.name
+      ).length
+      return booksLength
+    },
     allAuthors: async () => Author.find({}),
     allBooks: async (root, args) => {
       if (args.author && args.genre) {
@@ -81,7 +89,7 @@ const resolvers = {
           invalidArgs: args,
         })
       }
-      pubsub.publish('BOOK_ADDED', { bookAdded: book })
+      pubsub.publish("BOOK_ADDED", { bookAdded: book })
       return book
     },
     editAuthor: async (root, args, context) => {
@@ -128,9 +136,9 @@ const resolvers = {
   },
   Subscription: {
     bookAdded: {
-      subscribe: () => pubsub.asyncIterator(['BOOK_ADDED'])
-    }
-  }
+      subscribe: () => pubsub.asyncIterator(["BOOK_ADDED"]),
+    },
+  },
 }
 
 module.exports = resolvers

@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { useMutation } from "@apollo/client"
 import { ALL_AUTHORS, ALL_BOOKS, ADD_BOOK } from "../queries"
+import { updateCache } from "../App"
 
-const NewBook = ({ show, setPage }) => {
+const NewBook = (props) => {
   const [title, setTitle] = useState("")
   const [author, setAuthor] = useState("")
   const [published, setPublished] = useState("")
@@ -14,13 +15,16 @@ const NewBook = ({ show, setPage }) => {
     onError: (error) => {
       console.log(error.graphQLErrors[0].message)
     },
+    update: (cache, response) => {
+      updateCache(cache, { query: ALL_BOOKS }, response.data.addBook);
+    },
   })
 
-  if (!show) {
+  if (!props.show) {
     return null
   }
 
-  const submit = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     addBook({
@@ -32,7 +36,6 @@ const NewBook = ({ show, setPage }) => {
     setAuthor("")
     setGenres([])
     setGenre("")
-    setPage("books")
   }
 
   const addGenre = () => {
@@ -42,7 +45,7 @@ const NewBook = ({ show, setPage }) => {
 
   return (
     <div>
-      <form onSubmit={submit}>
+      <form onSubmit={handleSubmit}>
         <div>
           title
           <input

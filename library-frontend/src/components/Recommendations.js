@@ -1,34 +1,45 @@
 import { useEffect, useState } from "react"
-import { ALL_BOOKS } from "../queries"
-import { useQuery } from "@apollo/client"
+import { USER, ALL_BOOKS } from "../queries"
+import { useQuery, useLazyQuery } from "@apollo/client"
 
-const Recommendations = ({ currentUser, show }) => {
-  const [favouriteGenre, setFavouriteGenre] = useState(null)
-
-  useEffect(() => {
-    if (currentUser && currentUser.me !== null) {
-      setFavouriteGenre(currentUser.me.favouriteGenre)
-    }
-  }, [currentUser])
-
-  const result = useQuery(ALL_BOOKS, {
-    variables: { genre: favouriteGenre },
+const Recommendations = (props) => {
+  const user = useQuery(USER)
+  const [favoriteGenre, setFavoriteGenre] = useState(null)
+  const [books, setBooks] = useState([])
+  const [getBooks, result] = useLazyQuery(ALL_BOOKS, {
+    fetchPolicy: "no-cache",
   })
 
-  if (!show) {
+  useEffect(() => {
+    if (user.data) {
+      setFavoriteGenre(user?.data?.me?.favoriteGenre)
+      getBooks({ variables: { genre: favoriteGenre } })
+    }
+  }, [user.data, favoriteGenre, getBooks])
+
+  useEffect(() => {
+    if (result.data) {
+      setBooks(result.data.allBooks)
+    }
+  }, [result])
+
+  if (!props.show) {
     return null
   }
 
-  if (result.loading) {
-    ;<div>loading...</div>
+  if (result.loading || user.loading) {
+    return <p>Loading...</p>
   }
 
-  const books = result.data.allBooks
+  if (result.error || user.error) {
+    return <p>Error!</p>
+  }
+
 
   return (
     <div>
-      <h2>recommendations</h2>
-      books in your favourite genre <b>{favouriteGenre}</b>
+      <h2>Recommendations</h2>
+      Books in your favourite genre <b>{favoriteGenre}</b>
       <table>
         <tbody>
           <tr>
@@ -36,8 +47,8 @@ const Recommendations = ({ currentUser, show }) => {
             <th>author</th>
             <th>published</th>
           </tr>
-          {books.map((book) => (
-            <tr key={book.title}>
+          {books.map((book, i) => (
+            <tr key={i}>
               <td>{book.title}</td>
               <td>{book.author.name}</td>
               <td>{book.published}</td>

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
 import { useMutation } from "@apollo/client"
-import { LOGIN, USER } from "../queries"
+import { LOGIN } from "../queries"
 
-const LoginForm = ({ setToken, setPage, show, user }) => {
+const LoginForm = ({ setToken, setPage, show }) => {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
 
@@ -16,18 +16,17 @@ const LoginForm = ({ setToken, setPage, show, user }) => {
     if (result.data) {
       const token = result.data.login.value
       setToken(token)
-      setUsername("")
-      setPassword("")
       setPage("authors")
-      user.refetch({ query: USER })
       localStorage.setItem("phonenumbers-user-token", token)
     }
   }, [result.data]) // eslint-disable-line
 
-  const submit = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     login({ variables: { username, password } })
+    setUsername("")
+    setPassword("")
   }
 
   if (!show) {
@@ -36,7 +35,7 @@ const LoginForm = ({ setToken, setPage, show, user }) => {
 
   return (
     <div>
-      <form onSubmit={submit}>
+      <form onSubmit={handleSubmit}>
         <div>
           username{" "}
           <input
